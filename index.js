@@ -10,18 +10,17 @@ const app = express();
 /* CORS */
 app.use(
   cors({
-    origin: "https://its-power-frontend.vercel.app",
+    origin: true,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
-app.options("*", cors());
 
 /* Multer BEFORE body parser */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+
 });
 
 /* Body parser */
