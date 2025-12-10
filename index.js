@@ -63,8 +63,10 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
     await transporter.sendMail(mailOptions);
     res.json({ success: true, message: "Email sent successfully!" });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  console.log("CAREER EMAIL ERROR:", err); // <---- ADD THIS
+  res.status(500).json({ success: false, error: err.message });
+}
+
 });
 
 /* ============================
@@ -101,8 +103,10 @@ app.post("/send-contact", async (req, res) => {
     await transporter.sendMail(mailOptions);
     res.json({ success: true, message: "Message Sent Successfully!" });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  console.log("CONTACT EMAIL ERROR:", err); // <---- ADD THIS
+  res.status(500).json({ success: false, error: err.message });
+}
+
 });
 
 /* ============================
