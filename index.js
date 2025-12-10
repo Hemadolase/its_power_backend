@@ -7,7 +7,7 @@ const cors = require("cors");
 
 const app = express();
 
-/* CORS: allow only your frontend domain (safer) */
+/* CORS */
 app.use(
   cors({
     origin: "https://its-power-frontend.vercel.app",
@@ -16,42 +16,54 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+/* IMPORTANT: Increase body limit for mobile uploads */
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
-/* Multer in-memory storage (no uploads/ folder required on Render) */
-const upload = multer({ storage: multer.memoryStorage() });
+/* Multer with file size limit (10 MB) */
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+});
 
-/* Helper: create transporter once (optional optimization) */
 function createTransporter() {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // true for port 465
+    secure: true,
     auth: {
       user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS, // 16-digit app password
+      pass: process.env.GMAIL_PASS,
     },
   });
 }
 
-
 /* ============================
-   SEND CAREER FORM (with file)
+   SEND CAREER FORM (FILE UPLOAD)
    ============================ */
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
-    // Basic validation
-    if (!req.file) return res.status(400).json({ success: false, error: "Resume is required" });
+    if (!req.file)
+      return res
+        .status(400)
+        .json({ success: false, error: "Resume file required" });
 
-    const { fullname, email, phone, education, experience, location, message } = req.body;
+    const {
+      fullname,
+      email,
+      phone,
+      education,
+      experience,
+      location,
+      message,
+    } = req.body;
 
     const transporter = createTransporter();
 
     const mailOptions = {
       from: email || process.env.GMAIL_USER,
       to: "sales@itspowerinfra.com",
-      subject: `New Job Application from ${fullname || "Unknown"}`,
+      subject: `New Job Application from ${fullname}`,
       html: `
         <h3>New Job Application</h3>
         <p><strong>Name:</strong> ${fullname}</p>
@@ -60,7 +72,7 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
         <p><strong>Education:</strong> ${education}</p>
         <p><strong>Experience:</strong> ${experience}</p>
         <p><strong>Location:</strong> ${location}</p>
-        <p><strong>Message:</strong><br/>${message}</p>
+        <p><strong>Message:</strong><br>${message}</p>
       `,
       attachments: [
         {
@@ -71,15 +83,18 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    return res.json({ success: true, message: "Application Sent!" });
+    return res.json({ success: true, message: "Application Sent Successfully!" });
   } catch (err) {
     console.log("CAREER EMAIL ERROR:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 });
 
 /* ============================
-   SEND CONTACT FORM
+   CONTACT FORM
    ============================ */
 app.post("/send-contact", async (req, res) => {
   try {
@@ -90,21 +105,24 @@ app.post("/send-contact", async (req, res) => {
     const mailOptions = {
       from: email || process.env.GMAIL_USER,
       to: "sales@itspowerinfra.com",
-      subject: `New Contact Inquiry from ${name || "Website"}`,
+      subject: `New Contact Inquiry from ${name}`,
       html: `
-        <h3>New Contact Form Submission</h3>
+        <h3>Contact Inquiry</h3>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Company:</strong> ${company}</p>
         <p><strong>Phone:</strong> ${phone}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Product:</strong> ${product}</p>
         <p><strong>City:</strong> ${city}</p>
-        <p><strong>Message:</strong><br/>${message}</p>
+        <p><strong>Message:</strong><br>${message}</p>
       `,
     };
 
     await transporter.sendMail(mailOptions);
-    return res.json({ success: true, message: "Message Sent Successfully!" });
+    return res.json({
+      success: true,
+      message: "Message Sent Successfully!",
+    });
   } catch (err) {
     console.log("CONTACT EMAIL ERROR:", err);
     return res.status(500).json({ success: false, error: err.message });
