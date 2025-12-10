@@ -16,8 +16,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 /* Multer BEFORE body parser */
 const upload = multer({
   storage: multer.memoryStorage(),
