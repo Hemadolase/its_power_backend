@@ -13,23 +13,22 @@ app.use(
     origin: "https://its-power-frontend.vercel.app",
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
-    credentials: true,
   })
 );
 
 app.options("*", cors());
 
-/* IMPORTANT: Disable default parser so multer can read file */
-app.use(express.json({ limit: "0" }));
-app.use(express.urlencoded({ extended: true, limit: "0" }));
-
-/* Multer (MUST come before routes) */
+/* Multer BEFORE body parser */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-/* Email transporter */
+/* Body parser */
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/* SMTP Transport */
 function createTransporter() {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -46,26 +45,25 @@ function createTransporter() {
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
     if (!req.file)
-      return res.status(400).json({ success: false, error: "Resume required" });
+      return res.status(400).json({ success: false, error: "No resume uploaded" });
 
-    const { fullname, email, phone, education, experience, location, message } =
-      req.body;
+    const { fullname, email, phone, education, experience, location, message } = req.body;
 
     const transporter = createTransporter();
 
     await transporter.sendMail({
-      from: email || process.env.GMAIL_USER,
+      from: process.env.GMAIL_USER,
       to: "sales@itspowerinfra.com",
       subject: `New Job Application from ${fullname}`,
       html: `
         <h3>New Job Application</h3>
-        <p><strong>Name:</strong> ${fullname}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Education:</strong> ${education}</p>
-        <p><strong>Experience:</strong> ${experience}</p>
-        <p><strong>Location:</strong> ${location}</p>
-        <p><strong>Message:</strong><br>${message}</p>
+        <p><b>Name:</b> ${fullname}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Education:</b> ${education}</p>
+        <p><b>Experience:</b> ${experience}</p>
+        <p><b>Location:</b> ${location}</p>
+        <p><b>Message:</b><br>${message}</p>
       `,
       attachments: [
         {
@@ -75,14 +73,14 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
       ],
     });
 
-    return res.json({ success: true, message: "Application Sent Successfully!" });
+    res.json({ success: true, message: "Application Sent Successfully!" });
   } catch (err) {
     console.log("CAREER EMAIL ERROR:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-/* CONTACT FORM */
+/* CONTACT ROUTE */
 app.post("/send-contact", async (req, res) => {
   try {
     const { name, company, phone, email, product, city, message } = req.body;
@@ -90,25 +88,25 @@ app.post("/send-contact", async (req, res) => {
     const transporter = createTransporter();
 
     await transporter.sendMail({
-      from: email || process.env.GMAIL_USER,
+      from: process.env.GMAIL_USER,
       to: "sales@itspowerinfra.com",
       subject: `New Contact Inquiry from ${name}`,
       html: `
         <h3>Contact Inquiry</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Company:</strong> ${company}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Product:</strong> ${product}</p>
-        <p><strong>City:</strong> ${city}</p>
-        <p><strong>Message:</strong><br>${message}</p>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Company:</b> ${company}</p>
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Product:</b> ${product}</p>
+        <p><b>City:</b> ${city}</p>
+        <p><b>Message:</b><br>${message}</p>
       `,
     });
 
-    return res.json({ success: true, message: "Message Sent Successfully!" });
+    res.json({ success: true, message: "Message Sent Successfully!" });
   } catch (err) {
     console.log("CONTACT EMAIL ERROR:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
