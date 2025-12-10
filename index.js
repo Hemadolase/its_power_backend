@@ -7,23 +7,24 @@ const cors = require("cors");
 
 const app = express();
 
-/* CORS */
+/* CORS FIXED */
 app.use(
   cors({
-    origin: "https://its-power-frontend.vercel.app",
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    origin: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 
-/* IMPORTANT: Increase body limit for mobile uploads */
+/* Increase body limit */
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
-/* Multer with file size limit (10 MB) */
+/* Multer */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
 function createTransporter() {
@@ -39,24 +40,16 @@ function createTransporter() {
 }
 
 /* ============================
-   SEND CAREER FORM (FILE UPLOAD)
-   ============================ */
+   SEND CAREER FORM
+============================ */
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
-    if (!req.file)
-      return res
-        .status(400)
-        .json({ success: false, error: "Resume file required" });
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: "Resume required" });
+    }
 
-    const {
-      fullname,
-      email,
-      phone,
-      education,
-      experience,
-      location,
-      message,
-    } = req.body;
+    const { fullname, email, phone, education, experience, location, message } =
+      req.body;
 
     const transporter = createTransporter();
 
@@ -86,16 +79,13 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
     return res.json({ success: true, message: "Application Sent Successfully!" });
   } catch (err) {
     console.log("CAREER EMAIL ERROR:", err);
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
 /* ============================
-   CONTACT FORM
-   ============================ */
+   SEND CONTACT FORM
+============================ */
 app.post("/send-contact", async (req, res) => {
   try {
     const { name, company, phone, email, product, city, message } = req.body;
@@ -119,20 +109,13 @@ app.post("/send-contact", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    return res.json({
-      success: true,
-      message: "Message Sent Successfully!",
-    });
+    return res.json({ success: true, message: "Message Sent Successfully!" });
   } catch (err) {
     console.log("CONTACT EMAIL ERROR:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
 });
 
-/* ============================
-   START SERVER
-   ============================ */
+/* Server */
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
