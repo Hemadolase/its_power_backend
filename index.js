@@ -8,18 +8,17 @@ const cors = require("cors");
 const app = express();
 
 /* CORS FIXED */
-app.use(
-  cors({
-    origin: "https://its-power-frontend.vercel.app",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: "https://its-power-frontend.vercel.app",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+  credentials: true,
+};
 
-app.options("*", cors()); // <-- IMPORTANT for mobile
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // IMPORTANT ✔
 
-/* Increase body limit */
+/* Body Limits */
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
@@ -41,9 +40,7 @@ function createTransporter() {
   });
 }
 
-/* ============================
-   SEND CAREER FORM
-============================ */
+/* SEND CAREER FORM */
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
     if (!req.file) {
@@ -85,9 +82,7 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
   }
 });
 
-/* ============================
-   SEND CONTACT FORM
-============================ */
+/* SEND CONTACT FORM */
 app.post("/send-contact", async (req, res) => {
   try {
     const { name, company, phone, email, product, city, message } = req.body;
