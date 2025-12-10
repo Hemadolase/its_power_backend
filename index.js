@@ -25,13 +25,16 @@ const upload = multer({ storage: multer.memoryStorage() });
 /* Helper: create transporter once (optional optimization) */
 function createTransporter() {
   return nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // true for port 465
     auth: {
       user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS, // must be 16-digit app password
+      pass: process.env.GMAIL_PASS, // 16-digit app password
     },
   });
 }
+
 
 /* ============================
    SEND CAREER FORM (with file)
