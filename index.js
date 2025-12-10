@@ -7,27 +7,29 @@ const cors = require("cors");
 
 const app = express();
 
-/* CORS FIXED */
-const corsOptions = {
-  origin: "https://its-power-frontend.vercel.app",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-  credentials: true,
-};
+/* CORS */
+app.use(
+  cors({
+    origin: "https://its-power-frontend.vercel.app",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true,
+  })
+);
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // IMPORTANT ✔
+app.options("*", cors());
 
-/* Body Limits */
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+/* IMPORTANT: Disable default parser so multer can read file */
+app.use(express.json({ limit: "0" }));
+app.use(express.urlencoded({ extended: true, limit: "0" }));
 
-/* Multer */
+/* Multer (MUST come before routes) */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+/* Email transporter */
 function createTransporter() {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -40,19 +42,18 @@ function createTransporter() {
   });
 }
 
-/* SEND CAREER FORM */
+/* CAREER ROUTE */
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
-    if (!req.file) {
+    if (!req.file)
       return res.status(400).json({ success: false, error: "Resume required" });
-    }
 
     const { fullname, email, phone, education, experience, location, message } =
       req.body;
 
     const transporter = createTransporter();
 
-    const mailOptions = {
+    await transporter.sendMail({
       from: email || process.env.GMAIL_USER,
       to: "sales@itspowerinfra.com",
       subject: `New Job Application from ${fullname}`,
@@ -72,9 +73,8 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
           content: req.file.buffer,
         },
       ],
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
     return res.json({ success: true, message: "Application Sent Successfully!" });
   } catch (err) {
     console.log("CAREER EMAIL ERROR:", err);
@@ -82,14 +82,14 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
   }
 });
 
-/* SEND CONTACT FORM */
+/* CONTACT FORM */
 app.post("/send-contact", async (req, res) => {
   try {
     const { name, company, phone, email, product, city, message } = req.body;
 
     const transporter = createTransporter();
 
-    const mailOptions = {
+    await transporter.sendMail({
       from: email || process.env.GMAIL_USER,
       to: "sales@itspowerinfra.com",
       subject: `New Contact Inquiry from ${name}`,
@@ -103,9 +103,8 @@ app.post("/send-contact", async (req, res) => {
         <p><strong>City:</strong> ${city}</p>
         <p><strong>Message:</strong><br>${message}</p>
       `,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
     return res.json({ success: true, message: "Message Sent Successfully!" });
   } catch (err) {
     console.log("CONTACT EMAIL ERROR:", err);
@@ -113,6 +112,5 @@ app.post("/send-contact", async (req, res) => {
   }
 });
 
-/* Server */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
