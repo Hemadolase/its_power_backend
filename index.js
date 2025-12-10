@@ -10,12 +10,14 @@ const app = express();
 /* CORS FIXED */
 app.use(
   cors({
-    origin: true,
+    origin: "https://its-power-frontend.vercel.app",
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type"],
     credentials: true,
   })
 );
+
+app.options("*", cors()); // <-- IMPORTANT for mobile
 
 /* Increase body limit */
 app.use(express.json({ limit: "15mb" }));
