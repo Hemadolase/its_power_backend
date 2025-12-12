@@ -52,7 +52,7 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
 
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
-      to: "sales@itspowerinfra.com",
+      to: "suresh@itspowerinfra.com",
       subject: `New Job Application from ${fullname}`,
       html: `
         <h3>New Job Application</h3>
@@ -88,7 +88,7 @@ app.post("/send-contact", async (req, res) => {
 
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
-      to: "sales@itspowerinfra.com",
+      to: "suresh@itspowerinfra.com",
       subject: `New Contact Inquiry from ${name}`,
       html: `
         <h3>Contact Inquiry</h3>
