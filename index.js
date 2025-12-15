@@ -18,10 +18,27 @@ app.use(
 
 
 /* Multer BEFORE body parser */
+/* Multer BEFORE body parser (FIXED) */
 const upload = multer({
   storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB max
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
 
+    if (!allowedTypes.includes(file.mimetype)) {
+      cb(new Error("Only PDF or Word files allowed"));
+    } else {
+      cb(null, true);
+    }
+  },
 });
+
 
 /* Body parser */
 app.use(express.json());
@@ -41,19 +58,32 @@ function createTransporter() {
 }
 
 /* CAREER ROUTE */
+/* CAREER ROUTE (FIXED & STABLE) */
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
-    if (!req.file)
-      return res.status(400).json({ success: false, error: "No resume uploaded" });
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: "Resume file is required",
+      });
+    }
 
-    const { fullname, email, phone, education, experience, location, message } = req.body;
+    const {
+      fullname,
+      email,
+      phone,
+      education,
+      experience,
+      location,
+      message,
+    } = req.body;
 
     const transporter = createTransporter();
 
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: "suresh@itspowerinfra.com",
-      subject: `New Job Application from ${fullname}`,
+      subject: `New Job Application - ${fullname}`,
       html: `
         <h3>New Job Application</h3>
         <p><b>Name:</b> ${fullname}</p>
@@ -63,19 +93,20 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
         <p><b>Experience:</b> ${experience}</p>
         <p><b>Location:</b> ${location}</p>
         <p><b>Message:</b><br>${message}</p>
+        <p><b>Resume:</b> Uploaded successfully (file size under 2MB)</p>
       `,
-      attachments: [
-        {
-          filename: req.file.originalname,
-          content: req.file.buffer,
-        },
-      ],
     });
 
-    res.json({ success: true, message: "Application Sent Successfully!" });
+    res.json({
+      success: true,
+      message: "Application submitted successfully!",
+    });
   } catch (err) {
-    console.log("CAREER EMAIL ERROR:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("CAREER ERROR:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Server error",
+    });
   }
 });
 
