@@ -58,7 +58,6 @@ function createTransporter() {
 }
 
 /* CAREER ROUTE */
-/* CAREER ROUTE (FIXED & STABLE) */
 app.post("/send-career", upload.single("resume"), async (req, res) => {
   try {
     if (!req.file) {
@@ -93,8 +92,14 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
         <p><b>Experience:</b> ${experience}</p>
         <p><b>Location:</b> ${location}</p>
         <p><b>Message:</b><br>${message}</p>
-        <p><b>Resume:</b> Uploaded successfully (file size under 2MB)</p>
       `,
+      attachments: [
+        {
+          filename: req.file.originalname,
+          content: req.file.buffer,
+          contentType: req.file.mimetype,
+        },
+      ],
     });
 
     res.json({
@@ -102,7 +107,7 @@ app.post("/send-career", upload.single("resume"), async (req, res) => {
       message: "Application submitted successfully!",
     });
   } catch (err) {
-    console.error("CAREER ERROR:", err.message);
+    console.error("CAREER ERROR:", err);
     res.status(500).json({
       success: false,
       error: err.message || "Server error",
